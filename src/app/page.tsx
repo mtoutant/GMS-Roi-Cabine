@@ -5,6 +5,13 @@ import { compute } from "../lib/compute";
 import { defaultFinancing, defaultScenario, Financing, Scenario } from "../lib/model";
 type Tab = "Actuel" | "Nouveau" | "Paramètres & Financement" | "Résultats" | "Rapport";
 
+// Mets ça quelque part en haut du fichier (après les types/imports), AVANT SettingsFinancingView()
+const REGION_OPTIONS = [
+  "A- Montréal, Montérégie, Laurentides",
+  "B- Québec, Trois-Rivières, Estrie",
+  "C- Abitibi, Lac-Saint-Jean",
+] as const;
+
 function num(v: any): number {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
@@ -84,17 +91,17 @@ function InputRow(props: {
     </div>
   );
 }
-function SelectRow(props: {
+function SelectRow<T extends string>(props: {
   label: string;
-  value: string;
-  onChange: (v: string) => void;
-  options: string[];
+  value: T;
+  onChange: (v: T) => void;
+  options: T[];
 }) {
   const { label, value, onChange, options } = props;
   return (
     <div className="field">
       <div className="label">{label}</div>
-      <select className="select" value={value} onChange={(e) => onChange(e.target.value)}>
+      <select className="select" value={value} onChange={(e) => onChange(e.target.value as T)}>
         {options.map((o) => (
           <option key={o} value={o}>
             {o}
@@ -323,16 +330,25 @@ function ScenarioForm({
       return {
         ...prev,
         typeCarburant: nextFuel as any,
-        ...(shouldOverwrite && Number.isFinite(nextDefault)
-          ? { coutCarburant: String(nextDefault) }
-          : {}),
+...(shouldOverwrite && Number.isFinite(nextDefault)
+  ? { coutCarburant: nextDefault }
+  : {}),
       };
     });
   }}
   options={["Gaz Naturel", "Propane liquide", "Huile #2"]}
 />
-          <InputRow label="Coût du carburant ($/m3 ou $/L)" value={s.coutCarburant} onCommit={(v) => set("coutCarburant", v)} />
-        </div>
+          <InputRow
+  label="Coût du carburant ($/m3 ou $/L)"
+  value={s.coutCarburant}
+  onCommit={(v) => set("coutCarburant", Number(String(v).replace(",", ".")) || 0)}
+/>        
+<InputRow
+  label="Coût du carburant ($/m3 ou $/L)"
+  value={s.coutCarburant}
+  onCommit={(v) => set("coutCarburant", Number(String(v).replace(",", ".")) || 0)}
+/>
+</div>
       </div>
     </div>
   );
@@ -397,26 +413,29 @@ function SettingsFinancingView() {
       <div className="card">
         <div className="card-title">Données communes (Actuel + Nouveau)</div>
         <div className="grid grid-2">
-          <SelectRow
-            label="Région"
-            value={common.region}
-            onChange={(v) => setCommonAndApply({ region: v })}
-            options={[
-              "A- Montréal, Montérégie, Laurentides",
-              "B- Québec, Trois-Rivières, Estrie",
-              "C- Abitibi, Lac-Saint-Jean",
-            ]}
-          />
+<SelectRow
+  label="Région"
+  value={common.region}
+  onChange={(v) => setCommonAndApply({ region: v })}
+  options={REGION_OPTIONS as any}
+/>
+          
           <div />
           <InputRow
             label="Heures de travail / semaine"
             value={common.heuresParSemaine}
-            onCommit={(v) => setCommonAndApply({ heuresParSemaine: v })}
+            onCommit={(v) => {
+              const n = Number(String(v).replace(",", "."));
+              setCommonAndApply({ heuresParSemaine: Number.isFinite(n) ? n : 0 });
+            }}
           />
           <InputRow
             label="Revenu net par cycle ($)"
             value={common.revenuNetParCycle}
-            onCommit={(v) => setCommonAndApply({ revenuNetParCycle: v })}
+            onCommit={(v) => {
+              const n = Number(String(v).replace(",", "."));
+              setCommonAndApply({ revenuNetParCycle: Number.isFinite(n) ? n : 0 });
+            }}
           />
         </div>
       </div>
@@ -892,7 +911,13 @@ for (let y = 1; y <= YEARS; y++) {
 function AdminMaintenanceModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   if (!open) return null;
 
-const setFilter = (brand: any, chamber: any, v: string) => {
+  const brands = ["saima", "thermomeccanica", "gfs", "laflamme_ag", "other"] as const;
+  const chambers = ["downdraft", "semi", "cross"] as const;
+
+  type Brand = (typeof brands)[number];
+  type Chamber = (typeof chambers)[number];
+
+const setFilter = (brand: Brand, chamber: Chamber, v: string) => {
   setMaintenanceCfg((prev) => ({
     ...prev,
     filters: {
@@ -905,7 +930,7 @@ const setFilter = (brand: any, chamber: any, v: string) => {
   }));
 };
 
-const setCooking = (brand: any, key: "oui" | "non", v: string) => {
+const setCooking = (brand: Brand, key: "oui" | "non", v: string) => {
   setMaintenanceCfg((prev) => ({
     ...prev,
     cooking: {
@@ -917,7 +942,7 @@ const setCooking = (brand: any, key: "oui" | "non", v: string) => {
     },
   }));
 };
-const setFilterNote = (brand: any, chamber: any, v: string) => {
+const setFilterNote = (brand: Brand, chamber: Chamber, v: string) => {
   setMaintenanceCfg((prev) => ({
     ...prev,
     notes: {
@@ -933,7 +958,7 @@ const setFilterNote = (brand: any, chamber: any, v: string) => {
   }));
 };
 
-const setCookingNote = (brand: any, key: "oui" | "non", v: string) => {
+const setCookingNote = (brand: Brand, key: "oui" | "non", v: string) => {
   setMaintenanceCfg((prev) => ({
     ...prev,
     notes: {
@@ -964,8 +989,6 @@ const setCookingNote = (brand: any, key: "oui" | "non", v: string) => {
     window.setTimeout(() => setToast(null), 1400);
   };
 
-  const brands = ["saima", "thermomeccanica", "gfs", "laflamme_ag", "other"] as const;
-  const chambers = ["downdraft", "semi", "cross"] as const;
 
   const adminPanelStyle: React.CSSProperties = {
     background: "#111827",

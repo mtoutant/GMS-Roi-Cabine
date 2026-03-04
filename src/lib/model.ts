@@ -38,18 +38,19 @@ export type Financing = {
   miseDeFond: number; // $
   tauxImpot: number;
 };
-
 export type Results = {
-  // On garde ces champs comme dans ton “top 12”
-  consommation_1an: number; // on va y mettre le coût annuel (Nouveau) pour l’instant
+  consommation_1an: number; // legacy
   entretien_1an: number;
-  coutOperation_annuel: number;
+  coutOperation_annuel: number; // legacy
 
-coutEnergieActuel_1an: number;
-coutEnergieNouveau_1an: number;
+  coutEnergieActuel_1an: number;
+  coutEnergieNouveau_1an: number;
 
-entretienActuel_1an: number;
-entretienNouveau_1an: number;
+  entretienActuel_1an: number;
+  entretienNouveau_1an: number;
+
+  coutOperationActuel_annuel: number;
+  coutOperationNouveau_annuel: number;
 
   economie_1an: number;
   economie_5ans: number;
@@ -72,7 +73,7 @@ export function defaultScenario(): Scenario {
     heuresParSemaine: 40,
     revenuNetParCycle: 250,
 
-    marque: "Thermomecanica",
+    marque: "Thermomeccanica",
     typeChambre: "Downdraft",
     cfm: 12000,
 
