@@ -3,6 +3,7 @@ import { defaultMaintenanceConfig, loadMaintenanceConfig, saveMaintenanceConfig,
 import React, { Dispatch, SetStateAction, useEffect, useMemo, useState } from "react";
 import { compute } from "../lib/compute";
 import { defaultFinancing, defaultScenario, Financing, Scenario } from "../lib/model";
+import { on } from "events";
 type Tab = "Actuel" | "Nouveau" | "Paramètres & Financement" | "Résultats" | "Rapport";
 
 // Mets ça quelque part en haut du fichier (après les types/imports), AVANT SettingsFinancingView()
@@ -64,27 +65,31 @@ function InputRow(props: {
 }) {
   const { label, value, onCommit } = props;
 
-  // Fix iPhone/Safari: éviter un input type="number" contrôlé.
-  // On utilise text + clavier numérique, et on "commit" sur blur / Enter.
-  const commit = (v: string) => {
-    onCommit?.(v);
+  const [draft, setDraft] = React.useState<string>(value ?? "");
+
+  // Si la valeur vient d’ailleurs (ex: copy actuel->nouveau), on resynchronise
+  React.useEffect(() => {
+    setDraft(value ?? "");
+  }, [value]);
+
+  const commit = () => {
+    onCommit?.(draft);
   };
 
   return (
     <div className="field">
       <div className="label">{label}</div>
       <input
-        key={String(value ?? "")}     // force refresh si valeur change ailleurs
         className="input"
         type="text"
-        inputMode="decimal"           // clavier numérique sur iOS
-        defaultValue={value ?? ""}
-        onBlur={(e) => commit(e.currentTarget.value)}
+        inputMode="decimal"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
         onKeyDown={(e) => {
           if (e.key === "Enter") {
-            const el = e.currentTarget;
-            commit(el.value);
-            el.blur();
+            commit();
+            (e.currentTarget as HTMLInputElement).blur();
           }
         }}
       />
@@ -343,11 +348,6 @@ function ScenarioForm({
   value={s.coutCarburant}
   onCommit={(v) => set("coutCarburant", Number(String(v).replace(",", ".")) || 0)}
 />        
-<InputRow
-  label="Coût du carburant ($/m3 ou $/L)"
-  value={s.coutCarburant}
-  onCommit={(v) => set("coutCarburant", Number(String(v).replace(",", ".")) || 0)}
-/>
 </div>
       </div>
     </div>
@@ -1042,7 +1042,11 @@ const setCookingNote = (brand: Brand, key: "oui" | "non", v: string) => {
         padding: 24,
         zIndex: 1000,
       }}
-      onClick={save}
+      onClick={() => {
+  // Force le blur -> déclenche onBlur des InputRow -> commit dans le state
+  (document.activeElement as HTMLElement | null)?.blur();
+onClose
+}}
     >
       <div
         className="card"
