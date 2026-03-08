@@ -3,7 +3,6 @@ import { defaultMaintenanceConfig, loadMaintenanceConfig, saveMaintenanceConfig,
 import React, { Dispatch, SetStateAction, useEffect, useMemo, useState } from "react";
 import { compute } from "../lib/compute";
 import { defaultFinancing, defaultScenario, Financing, Scenario } from "../lib/model";
-import { on } from "events";
 type Tab = "Actuel" | "Nouveau" | "Paramètres & Financement" | "Résultats" | "Rapport";
 
 // Mets ça quelque part en haut du fichier (après les types/imports), AVANT SettingsFinancingView()
@@ -65,11 +64,14 @@ function InputRow(props: {
 }) {
   const { label, value, onCommit } = props;
 
-  const [draft, setDraft] = React.useState<string>(value ?? "");
+  const [draft, setDraft] = React.useState<string>(String(value ?? ""));
+  const isFocusedRef = React.useRef(false);
 
-  // Si la valeur vient d’ailleurs (ex: copy actuel->nouveau), on resynchronise
+  // Resync seulement si le champ n'est PAS en cours d'édition
   React.useEffect(() => {
-    setDraft(value ?? "");
+    if (!isFocusedRef.current) {
+      setDraft(String(value ?? ""));
+    }
   }, [value]);
 
   const commit = () => {
@@ -84,8 +86,14 @@ function InputRow(props: {
         type="text"
         inputMode="decimal"
         value={draft}
+        onFocus={() => {
+          isFocusedRef.current = true;
+        }}
         onChange={(e) => setDraft(e.target.value)}
-        onBlur={commit}
+        onBlur={() => {
+          isFocusedRef.current = false;
+          commit();
+        }}
         onKeyDown={(e) => {
           if (e.key === "Enter") {
             commit();
