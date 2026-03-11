@@ -33,15 +33,17 @@ export type Scenario = {
 
 export type Financing = {
   coutProjet: number; // champ commun (projet unique)
-  tauxInteretAnnuel: number; // ex 11,25
+  tauxInteretAnnuel: number; // ex 9,5% = 0.095
   termeAns: number; // ex 7
   miseDeFond: number; // $
   tauxImpot: number;
 };
+
 export type Results = {
-  consommation_1an: number; // legacy
+  // On garde ces champs comme dans ton “top 12”
+  consommation_1an: number; // on va y mettre le coût annuel (Nouveau) pour l’instant
   entretien_1an: number;
-  coutOperation_annuel: number; // legacy
+  coutOperation_annuel: number;
 
   coutEnergieActuel_1an: number;
   coutEnergieNouveau_1an: number;
@@ -86,7 +88,7 @@ export function defaultScenario(): Scenario {
     tempsCuissonMin: 30,
 
     typeCarburant: "Gaz Naturel",
-    coutCarburant: 0.33,
+    coutCarburant: 0.55,
 
     cyclesParJour: 5,
     reprisesParSemaine: 5
@@ -96,8 +98,8 @@ export function defaultScenario(): Scenario {
 export function defaultFinancing(): Financing {
   return {
     coutProjet: 200000,
-    // On stocke le taux en décimal (0.1125 = 11,25%)
-    tauxInteretAnnuel: 0.1125,
+    // On stocke le taux en décimal (0.0950 = 9,5%)
+    tauxInteretAnnuel: 0.0950,
     termeAns: 7,
     miseDeFond: 0,
     tauxImpot: 0.26,
